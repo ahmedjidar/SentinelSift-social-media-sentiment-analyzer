@@ -1,103 +1,166 @@
-import Image from "next/image";
+'use client'
+import { useState } from 'react'
+import { SentimentResult } from '@/types/types'
+import {
+  SearchHeader,
+  ErrorMessage,
+  StatsCard,
+  PostItem,
+  ExportReportButton
+} from '@/components/index'
+import { SentimentLineChart } from '@/components/SentimentLineChart'
+import { Loader2, SmilePlus } from 'lucide-react'
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [query, setQuery] = useState('Technology')
+  const [results, setResults] = useState<SentimentResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // Modify your analyzeSentiment function
+  const analyzeSentiment = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      let progress = 0
+      const interval = setInterval(() => {
+        progress = Math.min(progress + Math.random() * 10, 95)
+        setLoadingProgress(progress)
+      }, 1500)
+
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      })
+
+      clearInterval(interval)
+      setLoadingProgress(100)
+
+      if (!response.ok) throw new Error('Analysis failed')
+      const data = await response.json()
+      setResults(data)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+      setLoadingProgress(0)
+    }
+  }
+
+  const lineData = results ? results.posts
+    .sort((a, b) => a.created_utc - b.created_utc)
+    .reduce((acc, post, index) => {
+      const prev = acc[index - 1] || { positive: 0, negative: 0, neutral: 0 };
+      const newEntry = {
+        time: new Date(post.created_utc * 1000).toLocaleString('en-US', { timeZone: 'UTC' }), // Convert to milliseconds
+        positive: prev.positive + (post.sentiment === 'positive' ? 1 : 0),
+        negative: prev.negative + (post.sentiment === 'negative' ? 1 : 0),
+        neutral: prev.neutral + (post.sentiment === 'neutral' ? 1 : 0),
+      };
+      return [...acc, newEntry];
+    }, [] as Array<{ time: string; positive: number; negative: number; neutral: number }>)
+    : [];
+
+  return (
+    <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
+      <div className="max-w-3xl mx-auto space-y-8">
+        <SearchHeader
+          query={query}
+          loading={loading}
+          setQuery={setQuery}
+          analyzeSentiment={analyzeSentiment}
+        />
+
+        <ErrorMessage error={error} />
+
+        {!results && !loading && (
+          <div className="flex flex-col items-center justify-center space-y-6 min-h-[60vh]">
+            <SmilePlus
+              size={64}
+              className='text-neutral-200'
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+            <div className="text-center space-y-3">
+              <h2 className="text-lg font-medium text-neutral-200">
+                {`Let's Analyze Sentiment!`}
+              </h2>
+              <p className="text-neutral-500">
+                Search for communities to begin your analysis
+              </p>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="fixed inset-0 h-full bg-neutral-950/50 backdrop-blur z-50 flex flex-col items-center justify-center space-y-4">
+            <div className="relative w-48 h-1 bg-neutral-800 rounded-full overflow-hidden">
+              <div
+                className="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-300"
+                style={{ width: `${loadingProgress}%` }}
+              />
+            </div>
+            <div className="flex items-center space-x-3 text-neutral-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="font-medium">
+                Analyzing posts ({Math.round(loadingProgress)}%)
+              </span>
+            </div>
+          </div>
+        )}
+
+        {results && results.sentiment && (
+          <div id="sentiment-chart" className="space-y-8">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <StatsCard
+                title="Positive Sentiment"
+                value={results.sentiment.positive}
+                percentage={Math.round((results.sentiment.positive / results.total) * 100)}
+                trend={results.sentiment.positive > 0 ? 'up' : 'down'}
+              />
+              <StatsCard
+                title="Negative Sentiment"
+                value={results.sentiment.negative}
+                percentage={Math.round((results.sentiment.negative / results.total) * 100)}
+                trend={results.sentiment.negative > 0 ? 'down' : 'up'}
+              />
+              <StatsCard
+                title="Neutral Sentiment"
+                value={results.sentiment.neutral}
+                percentage={Math.round((results.sentiment.neutral / results.total) * 100)}
+                trend={'meh'}
+              />
+              <div className='flex items-center justify-center p-5 rounded-2xl border border-neutral-700 bg-neutral-900/70 hover:bg-neutral-900/50 transition-colors'>
+                <div className='flex items-center pl-4 gap-3'>
+                  <div className='space-y-1'>
+                    <p className='text-2xl font-bold text-neutral-200'>{results.total}</p>
+                    <p className='text-sm text-neutral-500'>Total Analyzed Posts</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Visualization Section */}
+            <div className="w-full flex items-center justify-between">
+              {/* Graph Here */}
+              <div className="w-full rounded-2xl bg-neutral-900/50 border border-neutral-700">
+                <SentimentLineChart data={lineData} />
+              </div>
+            </div>
+
+            {/* Post List */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Analyzed Posts</h3>
+              {results.posts.map((post, index) => (
+                <PostItem key={index} post={post} />
+              ))}
+            </div>
+
+            <ExportReportButton elementId="sentiment-chart" />
+          </div>
+        )}
+      </div>
+    </main>
+  )
 }
