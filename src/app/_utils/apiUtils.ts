@@ -32,6 +32,11 @@ export type SentimentCounts = {
     neutral: number;
 };
 
+export type AvailableKeyOptions = {
+    openai?: string;
+    hf?: string
+}
+
 // constants
 export const TIME_FILTER_MAP: Record<string, string> = {
     '24h': 'day',
@@ -77,8 +82,23 @@ export async function fetchRedditData(
     return response.json();
 }
 
+export async function providerSelector(apiKeys: AvailableKeyOptions): Promise<string> {
+    if (!apiKeys) return String(process.env.USE_FALLBACK_STRATEGY)
+    const useOpenAI = apiKeys?.openai && await validateApiKey('openai', apiKeys.openai)
+    const useHF = apiKeys?.hf && await validateApiKey('hf', apiKeys.hf)
+
+    const fallbackStrategy = () => {
+        if (useHF) return 'hf'
+        if (useOpenAI) return 'openai'
+        return String(process.env.USE_FALLBACK_STRATEGY)
+    }
+
+    return fallbackStrategy()
+}
+
 export async function processPosts(
-    data: RedditResponse
+    data: RedditResponse,
+    apiKeys: AvailableKeyOptions
 ): Promise<{ analysis: string[]; counts: SentimentCounts; redditPosts: RedditChild[] }> {
     const redditPosts = data.data.children;
 
@@ -86,7 +106,22 @@ export async function processPosts(
         (child.data.title + ' ' + child.data.selftext).substring(0, 200)
     );
 
-    const analysis = await Promise.all(posts.map(text => classifyText(text)));
+    const analysis = await Promise.all(
+        posts.map(async (text) => {
+            try {
+                if (await providerSelector(apiKeys) === 'openai') {
+                    return await _OAITextClassifier(text, apiKeys.openai)
+                }
+                if (await providerSelector(apiKeys) === 'hf') {
+                    return await _FB_MNLITextClassifier(text, apiKeys.hf)
+                }
+                return await _FallbackClassifier(text)
+            } catch {
+                return 'neutral'
+            }
+        })
+    )
+
     const counts: SentimentCounts = { positive: 0, negative: 0, neutral: 0 };
 
     analysis.forEach(label => {
@@ -98,57 +133,57 @@ export async function processPosts(
 }
 
 // HF inference ZS-classifier
-// export async function classifyText(text: string): Promise<string> {
-//     try {
-//         const response = await fetch(
-//             'https://api-inference.huggingface.co/models/facebook/bart-large-mnli',
-//             {
-//                 method: 'POST',
-//                 headers: {
-//                     Authorization: `Bearer ${process.env.HF_TOKEN}`,
-//                     'Content-Type': 'application/json'
-//                 },
-//                 body: JSON.stringify({
-//                     inputs: text,
-//                     parameters: {
-//                         candidate_labels: ['positive', 'negative', 'neutral'],
-//                         multi_label: false
-//                     }
-//                 })
-//             }
-//         );
+export async function _FB_MNLITextClassifier(text: string, givenApiKey?: string): Promise<string> {
+    try {
+        const response = await fetch(
+            'https://api-inference.huggingface.co/models/facebook/bart-large-mnli',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${givenApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: text,
+                    parameters: {
+                        candidate_labels: ['positive', 'negative', 'neutral'],
+                        multi_label: false
+                    }
+                })
+            }
+        );
 
-//         if (!response.ok) {
-//             const error = await response.json();
-//             throw new Error(error.error || 'Classification failed');
-//         }
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Classification failed');
+        }
 
-//         const result = await response.json();
-//         const scores = result.scores;
-//         const labels = result.labels;
+        const result = await response.json();
+        const scores = result.scores;
+        const labels = result.labels;
 
-//         const maxScore = Math.max(...scores);
-//         return labels[scores.indexOf(maxScore)].toLowerCase();
-//     } catch (error) {
-//         console.error('Classification error:', {
-//             text: text.substring(0, 50),
-//             error: error instanceof Error ? error.message : 'Unknown'
-//         });
-//         return 'neutral';
-//     }
-// }
+        const maxScore = Math.max(...scores);
+        return labels[scores.indexOf(maxScore)].toLowerCase();
+    } catch (error) {
+        console.error('Classification error:', {
+            text: text.substring(0, 50),
+            error: error instanceof Error ? error.message : 'Unknown'
+        });
+        return 'neutral';
+    }
+}
 
-// ChatGPT API 
-export async function classifyText(text: string): Promise<string> {
+// OpenAI API 
+export async function _OAITextClassifier(text: string, givenApiKey?: string): Promise<string> {
     try {
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                'Authorization': `Bearer ${givenApiKey}`
             },
             body: JSON.stringify({
-                model: "gpt-4o", // Or gpt-4-turbo for better accuracy
+                model: "gpt-4o",
                 response_format: { type: "json_object" },
                 messages: [
                     {
@@ -157,10 +192,10 @@ export async function classifyText(text: string): Promise<string> {
                     },
                     {
                         role: "user",
-                        content: `Text: ${text.substring(0, 1000)}` // Truncate to save tokens
+                        content: `Text: ${text.substring(0, 1000)}`
                     }
                 ],
-                temperature: 0.1, // Reduce randomness
+                temperature: 0.1,
                 max_tokens: 50
             })
         });
@@ -172,7 +207,52 @@ export async function classifyText(text: string): Promise<string> {
 
         const result = await response.json();
         const classification = JSON.parse(result.choices[0].message.content) as ClassificationResponse;
-        
+
+        return classification.sentiment;
+
+    } catch (error) {
+        console.error('Classification error:', {
+            text: text.substring(0, 50),
+            error: error instanceof Error ? error.message : 'Unknown'
+        });
+        return 'neutral';
+    }
+}
+
+export async function _FallbackClassifier(text: string): Promise<string> {
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                response_format: { type: "json_object" },
+                messages: [
+                    {
+                        role: "system",
+                        content: `Classify text sentiment as JSON: { "sentiment": "positive"|"negative"|"neutral" }`
+                    },
+                    {
+                        role: "user",
+                        content: `Text: ${text.substring(0, 1000)}`
+                    }
+                ],
+                temperature: 0.1,
+                max_tokens: 50
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'ChatGPT classification failed');
+        }
+
+        const result = await response.json();
+        const classification = JSON.parse(result.choices[0].message.content) as ClassificationResponse;
+
         return classification.sentiment;
 
     } catch (error) {
@@ -197,10 +277,24 @@ export function buildSearchParams(query: string, timeFilter: string, limit: numb
     });
 }
 
-// Plan 1: local model compatibility test (running and vercel deployment)
-// Plan 2: upgrade to pro plan in HF and use the pro model
-// Plan 3: if local model is cheap and efficient, use it as a fallback option 
-// TO-DO:
-    // Add rate limiter
-    // Refactor app/page.tsx
-    // Deploy to vercel
+export async function validateApiKey(service: 'openai' | 'hf', key: string) {
+    try {
+        if (service === 'openai') {
+            const response = await fetch('https://api.openai.com/v1/models', {
+                headers: { Authorization: `Bearer ${key}` }
+            })
+            return response.ok
+        }
+
+        if (service === 'hf') {
+            const response = await fetch('https://huggingface.co/api/whoami-v2', {
+                headers: { Authorization: `Bearer ${key}` }
+            })
+            return response.ok
+        }
+
+        return false
+    } catch {
+        return false
+    }
+}

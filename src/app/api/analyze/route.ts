@@ -4,7 +4,7 @@ import { buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, val
 
 export async function POST(req: Request) {
     try {
-        const { finalQuery, timeFilter = 'all', limit = 10 } = await req.json();
+        const { finalQuery, timeFilter = 'all', limit = 10, apiKeys } = await req.json();
         const query = finalQuery?.trim();
         const token = await getRedditToken();
 
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
         const searchParams = buildSearchParams(query, timeFilter, limit);
         const data = await fetchRedditData(getRedditHeaders(token), searchParams);
-        const { analysis, counts, redditPosts } = await processPosts(data);
+        const { analysis, counts, redditPosts } = await processPosts(data, apiKeys);
 
         return NextResponse.json({
             total: redditPosts.length,

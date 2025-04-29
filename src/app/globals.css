@@ -10,6 +10,22 @@
   }
 }
 
+@media (min-width: 480px) and (max-width: 1080px) and (min-resolution: 133dpi) {
+  .main-container {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (min-resolution: 300dpi) {
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    zoom: 0.75;
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

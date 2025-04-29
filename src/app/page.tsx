@@ -12,6 +12,8 @@ import {
 import { SentimentLineChart } from '@/components/SentimentLineChart'
 import { Loader2, SmilePlus } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ApiKeySettings } from '@/components/ApiKeySettings'
+import { AppIdentityCard } from '@/components/SourceInfo'
 
 export default function Home() {
   const [query, setQuery] = useState('')
@@ -28,6 +30,10 @@ export default function Home() {
     try {
       const finalQuery = currentQuery || query;
       let progress = 0
+
+      const userOpenAIKey = localStorage.getItem('OPENAI_KEY')
+      const userHFKey = localStorage.getItem('HF_KEY')
+
       const interval = setInterval(() => {
         progress = Math.min(progress + Math.random() * 10, 95)
         setLoadingProgress(progress)
@@ -36,7 +42,15 @@ export default function Home() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ finalQuery, timeFilter, limit })
+        body: JSON.stringify({
+          finalQuery, 
+          timeFilter, 
+          limit, 
+          apiKeys: {
+            openai: userOpenAIKey,
+            hf: userHFKey
+          }
+        })
       })
 
       clearInterval(interval)
@@ -48,7 +62,7 @@ export default function Home() {
       if (response.status === 500) throw new Error('Internal server error, please try again later')
       if (response.status === 400) throw new Error('Bad request, please check your input')
       if (response.status === 404) throw new Error('Not found, please check your input')
-        
+
       const data = await response.json()
       setResults(data)
 
@@ -75,8 +89,9 @@ export default function Home() {
     : [];
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
-      <div className="max-w-3xl mx-auto space-y-4">
+    <main className="main-container min-h-screen bg-neutral-950 text-neutral-100 p-8 sm:grid sm:grid-cols-8 gap-4"> 
+      <ApiKeySettings />
+      <div className="sm:col-span-4 space-y-4">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <SearchHeader
             query={query}
@@ -87,40 +102,40 @@ export default function Home() {
         </div>
 
         <div className="flex gap-3 w-full sm:w-auto">
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
-                <SelectValue placeholder="Time" />
-              </SelectTrigger>
-              <SelectContent className="bg-neutral-900/90 text-neutral-200">
-                {['24h', 'Week', 'Month', 'Year', 'All'].map((option) => (
-                  <SelectItem
-                    key={option}
-                    value={option.toLowerCase()}
-                    className="hover:bg-neutral-800"
-                  >
-                    Past {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
+              <SelectValue placeholder="Time" />
+            </SelectTrigger>
+            <SelectContent className="bg-neutral-900/90 text-neutral-200">
+              {['24h', 'Week', 'Month', 'Year', 'All'].map((option) => (
+                <SelectItem
+                  key={option}
+                  value={option.toLowerCase()}
+                  className="hover:bg-neutral-800"
+                >
+                  Past {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <Select value={limit.toString()} onValueChange={(v) => setLimit(Number(v))}>
-              <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
-                <SelectValue placeholder="Limit" />
-              </SelectTrigger>
-              <SelectContent className="bg-neutral-900/90 text-neutral-200">
-                {[10, 25, 50, 100].map((num) => (
-                  <SelectItem
-                    key={num}
-                    value={num.toString()}
-                    className="hover:bg-neutral-800"
-                  >
-                    {num} Posts
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={limit.toString()} onValueChange={(v) => setLimit(Number(v))}>
+            <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
+              <SelectValue placeholder="Limit" />
+            </SelectTrigger>
+            <SelectContent className="bg-neutral-900/90 text-neutral-200">
+              {[10, 25, 50, 100].map((num) => (
+                <SelectItem
+                  key={num}
+                  value={num.toString()}
+                  className="hover:bg-neutral-800"
+                >
+                  {num} Posts
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <ErrorMessage error={error} />
 
         {!results && !loading && (
@@ -160,7 +175,7 @@ export default function Home() {
         {results && results.sentiment && (
           <div id="sentiment-chart" className="space-y-8">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-10">
               <StatsCard
                 title="Positive Sentiment"
                 value={results.sentiment.positive}
@@ -179,8 +194,8 @@ export default function Home() {
                 percentage={Math.round((results.sentiment.neutral / results.total) * 100)}
                 trend={'meh'}
               />
-              <div className='flex items-center justify-center p-5 rounded-2xl border border-neutral-700 bg-neutral-900/70 hover:bg-neutral-900/50 transition-colors'>
-                <div className='flex items-center pl-4 gap-3'>
+              <div className='flex items-center justify-start p-5 pl-8 rounded-2xl border border-neutral-700 bg-neutral-900/70 hover:bg-neutral-900/50 transition-colors'>
+                <div className='flex items-center gap-3'>
                   <div className='space-y-1'>
                     <p className='text-2xl font-bold text-neutral-200'>{results.total}</p>
                     <p className='text-sm text-neutral-500'>Total Analyzed Posts</p>
@@ -209,6 +224,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <AppIdentityCard />
     </main>
   )
 }
