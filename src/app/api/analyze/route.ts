@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getRedditToken } from '@/lib/reddit-auth';
 import { buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, validateRequest } from '@/app/_utils/apiUtils';
+import { ratelimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
     try {
+        const ip = req.headers.get('x-forwarded-for') || '127.0.0.1'
+        const { success } = await ratelimit.limit(ip)
+
+        if (!success) {
+            return NextResponse.json(
+                { error: 'Too many requests. Please try again in a minute.' },
+                { status: 429 }
+            )
+        }
         const { finalQuery, timeFilter = 'all', limit = 10, apiKeys } = await req.json();
         const query = finalQuery?.trim();
         const token = await getRedditToken();
