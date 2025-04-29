@@ -72,18 +72,15 @@ export async function POST(req: Request) {
             t: timeMap[timeFilter] || 'all'
           });
           
-        //   const redditResponse = await fetch(
-        //     `https://oauth.reddit.com/search?${searchParams}`,
-        //     { headers }
-        //   );
+          const redditResponse = await fetch(
+            `https://oauth.reddit.com/search?${searchParams}`,
+            { headers }
+          );
 
-        console.log("My Query: ",`https://oauth.reddit.com/search?q=${encodeURIComponent(query)}`+
-                     `&limit=${limit}` + `&t=${timeMap[timeFilter] || 'all'}`)
-
-        const redditResponse = await fetch(
-            `https://oauth.reddit.com/search?q=${encodeURIComponent(query)}` + `&limit=${limit}` + `&t=${timeMap[timeFilter] || 'all'}`,
-            { headers: { Authorization: `Bearer ${token}`, 'User-Agent': userAgent } }
-        );
+        // const redditResponse = await fetch(
+        //     `https://oauth.reddit.com/search?q=${encodeURIComponent(query)}` + `&limit=${limit}` + `&t=${timeMap[timeFilter] || 'all'}`,
+        //     { headers: { Authorization: `Bearer ${token}`, 'User-Agent': userAgent } }
+        // );
 
         // Check for HTTP errors first
         if (!redditResponse.ok) {
