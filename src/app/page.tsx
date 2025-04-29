@@ -1,4 +1,5 @@
 'use client'
+
 import { useState } from 'react'
 import { SentimentResult } from '@/types/types'
 import {
@@ -11,9 +12,6 @@ import {
 import { SentimentLineChart } from '@/components/SentimentLineChart'
 import { Loader2, SmilePlus } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-// refactor heavy components (page.tsx, route.ts)
-// add rate limiter
 
 export default function Home() {
   const [query, setQuery] = useState('')
