@@ -37,7 +37,7 @@ export const PostItem: FC<PostItemProps> = ({ post }) => (
         </span>
       </div>
       <p className="text-neutral-400 text-sm mb-4 line-clamp-3">
-        {post.content}
+        {post.content.substring(0, 256)}{`...more`}
       </p>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-neutral-400 text-sm">
         <div className="flex items-center gap-2"><User size={14} /><span>{post.author}</span></div>

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 import { getRedditToken } from '@/lib/reddit-auth';
+import { userAgent } from '@/lib/reddit-auth';
 
 async function classifyText(text: string): Promise<string> {
     try {
@@ -9,7 +10,7 @@ async function classifyText(text: string): Promise<string> {
             {
                 method: 'POST',
                 headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_HF_TOKEN}`,
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -44,13 +45,44 @@ async function classifyText(text: string): Promise<string> {
 
 export async function POST(req: Request) {
     try {
-        const { query } = await req.json();
+        const { finalQuery, timeFilter = 'all', limit = 10 } = await req.json();
+        const query = finalQuery;
         const token = await getRedditToken();
 
-        // 1. Fetch Reddit posts
+        // Map time filters to Reddit's t parameter
+        const timeMap: { [key: string]: string } = {
+            '24h': 'day',
+            week: 'week',
+            month: 'month',
+            year: 'year',
+            all: 'all'
+        };
+
+        if (!token) throw new Error('Invalid Reddit token');
+        if (!query?.trim()) throw new Error('Empty search query');
+
+        const headers = {
+            Authorization: `Bearer ${token}`,
+            'User-Agent': userAgent
+        };
+
+        const searchParams = new URLSearchParams({
+            q: query,
+            limit: limit.toString(),
+            t: timeMap[timeFilter] || 'all'
+          });
+          
+        //   const redditResponse = await fetch(
+        //     `https://oauth.reddit.com/search?${searchParams}`,
+        //     { headers }
+        //   );
+
+        console.log("My Query: ",`https://oauth.reddit.com/search?q=${encodeURIComponent(query)}`+
+                     `&limit=${limit}` + `&t=${timeMap[timeFilter] || 'all'}`)
+
         const redditResponse = await fetch(
-            `https://oauth.reddit.com/search?q=${encodeURIComponent(query)}&limit=3`,
-            { headers: { Authorization: `bearer ${token}`, 'User-Agent': 'NextJS-Sentiment-Analyzer/1.0' } }
+            `https://oauth.reddit.com/search?q=${encodeURIComponent(query)}` + `&limit=${limit}` + `&t=${timeMap[timeFilter] || 'all'}`,
+            { headers: { Authorization: `Bearer ${token}`, 'User-Agent': userAgent } }
         );
 
         // Check for HTTP errors first

@@ -10,19 +10,25 @@ import {
 } from '@/components/index'
 import { SentimentLineChart } from '@/components/SentimentLineChart'
 import { Loader2, SmilePlus } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+// refactor heavy components (page.tsx, route.ts)
+// add rate limiter
 
 export default function Home() {
-  const [query, setQuery] = useState('Technology')
+  const [query, setQuery] = useState('')
   const [results, setResults] = useState<SentimentResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [timeFilter, setTimeFilter] = useState('all')
+  const [limit, setLimit] = useState(10)
 
-  // Modify your analyzeSentiment function
-  const analyzeSentiment = async () => {
+  const analyzeSentiment = async (currentQuery?: string) => {
     setLoading(true)
     setError(null)
     try {
+      const finalQuery = currentQuery || query;
       let progress = 0
       const interval = setInterval(() => {
         progress = Math.min(progress + Math.random() * 10, 95)
@@ -32,13 +38,19 @@ export default function Home() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ finalQuery, timeFilter, limit })
       })
 
       clearInterval(interval)
       setLoadingProgress(100)
 
-      if (!response.ok) throw new Error('Analysis failed')
+      if (!response.ok) throw new Error('Analysis failed (API might be down, try again later)')
+      if (response.status === 429) throw new Error('Rate limit exceeded, please try again later')
+      if (response.status === 403) throw new Error('Forbidden: Invalid API key or token')
+      if (response.status === 500) throw new Error('Internal server error, please try again later')
+      if (response.status === 400) throw new Error('Bad request, please check your input')
+      if (response.status === 404) throw new Error('Not found, please check your input')
+        
       const data = await response.json()
       setResults(data)
 
@@ -66,21 +78,58 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <SearchHeader
-          query={query}
-          loading={loading}
-          setQuery={setQuery}
-          analyzeSentiment={analyzeSentiment}
-        />
+      <div className="max-w-3xl mx-auto space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <SearchHeader
+            query={query}
+            loading={loading}
+            setQuery={setQuery}
+            analyzeSentiment={analyzeSentiment}
+          />
+        </div>
 
+        <div className="flex gap-3 w-full sm:w-auto">
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
+                <SelectValue placeholder="Time" />
+              </SelectTrigger>
+              <SelectContent className="bg-neutral-900/90 text-neutral-200">
+                {['24h', 'Week', 'Month', 'Year', 'All'].map((option) => (
+                  <SelectItem
+                    key={option}
+                    value={option.toLowerCase()}
+                    className="hover:bg-neutral-800"
+                  >
+                    Past {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={limit.toString()} onValueChange={(v) => setLimit(Number(v))}>
+              <SelectTrigger className="w-1/2 bg-neutral-900/70 border border-neutral-700">
+                <SelectValue placeholder="Limit" />
+              </SelectTrigger>
+              <SelectContent className="bg-neutral-900/90 text-neutral-200">
+                {[10, 25, 50, 100].map((num) => (
+                  <SelectItem
+                    key={num}
+                    value={num.toString()}
+                    className="hover:bg-neutral-800"
+                  >
+                    {num} Posts
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         <ErrorMessage error={error} />
 
         {!results && !loading && (
           <div className="flex flex-col items-center justify-center space-y-6 min-h-[60vh]">
             <SmilePlus
               size={64}
-              className='text-neutral-200'
+              className='text-neutral-500'
             />
             <div className="text-center space-y-3">
               <h2 className="text-lg font-medium text-neutral-200">
@@ -113,7 +162,7 @@ export default function Home() {
         {results && results.sentiment && (
           <div id="sentiment-chart" className="space-y-8">
             {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-10">
               <StatsCard
                 title="Positive Sentiment"
                 value={results.sentiment.positive}
@@ -157,6 +206,7 @@ export default function Home() {
               ))}
             </div>
 
+            {/* needs fixes */}
             <ExportReportButton elementId="sentiment-chart" />
           </div>
         )}
@@ -164,3 +214,4 @@ export default function Home() {
     </main>
   )
 }
+

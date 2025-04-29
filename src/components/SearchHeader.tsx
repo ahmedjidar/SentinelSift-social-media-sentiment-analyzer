@@ -8,7 +8,7 @@ interface SearchHeaderProps {
   query: string
   loading: boolean
   setQuery: (value: string) => void
-  analyzeSentiment: () => void
+  analyzeSentiment: (query?: string) => void
 }
 
 export const SearchHeader: FC<SearchHeaderProps> = ({
@@ -41,7 +41,7 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
         </div>
 
         <Button
-          onClick={analyzeSentiment}
+          onClick={() => analyzeSentiment()}
           disabled={loading}
           className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 bg-neutral-200 hover:bg-white text-neutral-950 hover:text-neutral-800 rounded-lg font-medium gap-2 shadow-lg hover:shadow-xl transition-all"
         >
@@ -102,9 +102,9 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
                   <div
                     key={item}
                     onClick={() => {
-                      setQuery(item);
-                      analyzeSentiment();
-                      setIsSearchFocused(false);
+                      setQuery(item)
+                      analyzeSentiment(item)
+                      setIsSearchFocused(false)
                     }}
                     className="flex items-center px-4 py-3 hover:bg-neutral-800/50 cursor-pointer transition-colors"
                   >
