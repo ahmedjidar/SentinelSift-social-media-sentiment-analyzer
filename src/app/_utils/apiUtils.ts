@@ -1,4 +1,7 @@
 import { userAgent } from '@/lib/reddit-auth';
+import { NextRequest } from 'next/server';
+import { ratelimit } from '@/lib/rate-limit';
+import { AnalysisError, APIError, AuthError, ValidationError } from '@/lib/errors';
 
 // interfaces & types
 export interface RedditPostData {
@@ -70,13 +73,13 @@ export async function fetchRedditData(
             status: response.status,
             error: errorText
         });
-        throw new Error(`Reddit API Error: ${response.statusText}`);
+        throw new APIError(`Reddit API Error: ${response.statusText}`);
     }
 
     const contentType = response.headers.get('content-type');
     if (!contentType?.includes('application/json')) {
         const body = await response.text();
-        throw new Error(`Invalid content type: ${contentType} - Response: ${body.substring(0, 100)}`);
+        throw new ValidationError(`Reddit: Invalid content type: ${contentType} - Response: ${body.substring(0, 100)}`);
     }
 
     return response.json();
@@ -84,16 +87,39 @@ export async function fetchRedditData(
 
 export async function providerSelector(apiKeys: AvailableKeyOptions): Promise<string> {
     if (!apiKeys) return String(process.env.USE_FALLBACK_STRATEGY)
-    const useOpenAI = apiKeys?.openai && await validateApiKey('openai', apiKeys.openai)
-    const useHF = apiKeys?.hf && await validateApiKey('hf', apiKeys.hf)
+    // const useOpenAI = apiKeys?.openai && await validateApiKey('openai', apiKeys.openai)
+    // const useHF = apiKeys?.hf && await validateApiKey('hf', apiKeys.hf)
 
-    const fallbackStrategy = () => {
-        if (useHF) return 'hf'
-        if (useOpenAI) return 'openai'
-        return String(process.env.USE_FALLBACK_STRATEGY)
+    // const fallbackStrategy = () => {
+    //     if (useHF) return 'hf'
+    //     if (useOpenAI) return 'openai'
+    //     return String(process.env.USE_FALLBACK_STRATEGY)
+    // }
+
+    // return fallbackStrategy()
+
+    if (apiKeys.openai) {
+        const ok = await validateApiKey('openai', apiKeys.openai);
+        if (!ok) {
+            throw new APIError(
+                'OpenAI key rejected by the API, please re-enter a valid key'
+            );
+        }
+    }
+    
+    if (apiKeys.hf) {
+        const ok = await validateApiKey('hf', apiKeys.hf);
+        if (!ok) {
+            throw new APIError(
+                'Hugging Face key rejected by the API, please re-enter a valid key'
+            );
+        }
     }
 
-    return fallbackStrategy()
+    if (apiKeys.openai) return 'openai';
+    if (apiKeys.hf) return 'hf';
+
+    return String(process.env.USE_FALLBACK_STRATEGY);
 }
 
 export async function processPosts(
@@ -116,8 +142,9 @@ export async function processPosts(
                     return await _FB_MNLITextClassifier(text, apiKeys.hf)
                 }
                 return await _FallbackClassifier(text)
-            } catch {
-                return 'neutral'
+            } catch (error) {
+                if (error instanceof AnalysisError) throw error
+                throw new APIError('Unexpected API Error. Try clearing the keys and proceed using the fallback model')
             }
         })
     )
@@ -153,9 +180,14 @@ export async function _FB_MNLITextClassifier(text: string, givenApiKey?: string)
             }
         );
 
+        if (response.status === 401) {
+            const error = await response.json();
+            throw new AuthError(`HF: facebook/bart-large-mnli: ${error.error?.message || 'Unauthorized'}`);
+        }
+
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error || 'Classification failed');
+            throw new APIError('HF: facebook/bart-large-mnli: ' + error.error?.message || 'Classification failed');
         }
 
         const result = await response.json();
@@ -200,9 +232,14 @@ export async function _OAITextClassifier(text: string, givenApiKey?: string): Pr
             })
         });
 
+        if (response.status === 401) {
+            const error = await response.json();
+            throw new AuthError(`OpenAI: ${error.error?.message || 'Unauthorized'}`);
+        }
+
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error?.message || 'ChatGPT classification failed');
+            throw new APIError('OpenAI: ' + error.error?.message || 'Classification failed');
         }
 
         const result = await response.json();
@@ -245,9 +282,13 @@ export async function _FallbackClassifier(text: string): Promise<string> {
             })
         });
 
+        if (response.status === 401) {
+            throw new AuthError(`Fallback Model`);
+        }
+
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error?.message || 'ChatGPT classification failed');
+            throw new APIError('Fallback Model: ' + error.error?.message || 'Classification failed');
         }
 
         const result = await response.json();
@@ -256,17 +297,14 @@ export async function _FallbackClassifier(text: string): Promise<string> {
         return classification.sentiment;
 
     } catch (error) {
-        console.error('Classification error:', {
-            text: text.substring(0, 50),
-            error: error instanceof Error ? error.message : 'Unknown'
-        });
-        return 'neutral';
+        if (error instanceof AnalysisError) throw error
+        throw new APIError('Fallback Model API Error ')
     }
 }
 
 export function validateRequest(query: string | undefined, token: string | null) {
-    if (!token) throw new Error('Invalid Reddit token');
-    if (!query) throw new Error('Empty search query');
+    if (!token) throw new ValidationError('Invalid Reddit token');
+    if (!query) throw new ValidationError('Empty search query');
 }
 
 export function buildSearchParams(query: string, timeFilter: string, limit: number): URLSearchParams {
@@ -297,4 +335,10 @@ export async function validateApiKey(service: 'openai' | 'hf', key: string) {
     } catch {
         return false
     }
+}
+
+export async function rateLimitHandler(req: NextRequest) {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1'
+    const { success } = await ratelimit.limit(ip)
+    return success;
 }

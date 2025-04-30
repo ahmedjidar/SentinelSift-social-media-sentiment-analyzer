@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { AuthError } from './errors';
 
 export const userAgent = 'web:social-media-sentiment-analyzer:v1.0 (by /u/Logical-Beginning103)';
 
@@ -8,17 +9,18 @@ export async function getRedditToken() {
   if (tokenCache && tokenCache.expires > Date.now()) {
     return tokenCache.token;
   }
-  
+
   try {
     const newToken = await refreshToken();
     tokenCache = {
       token: newToken,
-      expires: Date.now() + 3500 * 1000 
+      expires: Date.now() + 3500 * 1000
     };
     return newToken;
   } catch (error) {
-    console.error('Token refresh failed:', error);
-    throw new Error('Failed to refresh Reddit token');
+    if (error instanceof Error) {
+      throw new AuthError('Reddit OAuth (Failed to refresh token)');
+    }
   }
 }
 
@@ -45,7 +47,8 @@ export async function refreshToken() {
 
     return response.data.access_token;
   } catch (error) {
-    console.error('Reddit authentication failed:');
-    throw error;
+    if (error instanceof axios.AxiosError) {
+      throw new AuthError('Reddit OAuth');
+    }
   }
 }

@@ -1,37 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRedditToken } from '@/lib/reddit-auth';
-import { AvailableKeyOptions, buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, validateRequest } from '@/app/_utils/apiUtils';
-// import { ratelimit } from '@/lib/rate-limit';
+import { AvailableKeyOptions, buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, rateLimitHandler, validateRequest } from '@/app/_utils/apiUtils';
 import { decrypt } from '@/lib/encryption';
+import { AnalysisError, RateLimitError } from '@/lib/errors';
 
 export async function POST(req: NextRequest) {
     try {
-        // const ip = req.headers.get('x-forwarded-for') || '127.0.0.1'
-        // const { success } = await ratelimit.limit(ip)
-
-        // if (!success) {
-        //     return NextResponse.json(
-        //         { error: 'Too many requests. Please try again in a minute.' },
-        //         { status: 429 }
-        //     )
-        // }
+        // redis rate limiting 
+        // const success = rateLimitHandler(req);
+        // if(!success) throw new RateLimitError();
 
         const cookies = req.cookies;
         const encryptedOpenAI = cookies.get('secure_openai_key')?.value;
         const encryptedHF = cookies.get('secure_hf_key')?.value;
 
         const [openAIKey, hfKey] = await Promise.all([
-        encryptedOpenAI ? decrypt(encryptedOpenAI) : Promise.resolve(''),
-        encryptedHF ? decrypt(encryptedHF) : Promise.resolve('')
+            encryptedOpenAI ? decrypt(encryptedOpenAI) : Promise.resolve(''),
+            encryptedHF ? decrypt(encryptedHF) : Promise.resolve('')
         ]);
-
-        console.log("Decrypted OpenAI Key:", openAIKey);
 
         const apiKeys: AvailableKeyOptions = {
             openai: openAIKey,
             hf: hfKey
         }
-     
+
         const { finalQuery, timeFilter = 'all', limit = 10 } = await req.json();
         const query = finalQuery?.trim();
         const token = await getRedditToken();
@@ -59,10 +51,17 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error) {
-        console.error('Critical error:', error);
+        if (error instanceof AnalysisError) {
+            return NextResponse.json(
+                { error: error.message, type: error.type },
+                { status: error.statusCode }
+            )
+        }
+
+        console.error('Unhandled error:', error)
         return NextResponse.json(
-            { error: 'Analysis failed', details: error instanceof Error ? error.message : 'Unknown error' },
+            { error: 'Internal server error', type: 'INTERNAL' },
             { status: 500 }
-        );
+        )
     }
 }

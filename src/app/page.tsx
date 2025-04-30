@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SentimentResult } from '@/types/types'
+import { AppError, ErrorType, SentimentResult } from '@/types/types'
 import {
   SearchHeader,
   ErrorMessage,
@@ -15,12 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ApiKeySettings } from '@/components/ApiKeySettings'
 import { AppIdentityCard } from '@/components/SourceInfo'
 
+// refactor page.tsx, apiKeySettings.tsx
+
 export default function Home() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SentimentResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState(0)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<AppError | null>(null)
   const [timeFilter, setTimeFilter] = useState('all')
   const [limit, setLimit] = useState(10)
 
@@ -49,18 +51,21 @@ export default function Home() {
       clearInterval(interval)
       setLoadingProgress(100)
 
-      if (!response.ok) throw new Error('Analysis failed (API might be down, try again later)')
-      if (response.status === 429) throw new Error('Rate limit exceeded, please try again later')
-      if (response.status === 403) throw new Error('Forbidden: Invalid API key or token')
-      if (response.status === 500) throw new Error('Internal server error, please try again later')
-      if (response.status === 400) throw new Error('Bad request, please check your input')
-      if (response.status === 404) throw new Error('Not found, please check your input')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(`${errorData.type}:${errorData.error}`)
+      }
 
       const data = await response.json()
       setResults(data)
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      if (err instanceof Error) {
+        const [type, message] = err.message.split(':')
+        setError({ type: type as ErrorType, message })
+      } else {
+        setError({ type: 'INTERNAL', message: 'Unknown error occurred' })
+      }
     } finally {
       setLoading(false)
       setLoadingProgress(0)

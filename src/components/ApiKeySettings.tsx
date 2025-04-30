@@ -1,51 +1,39 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle, Info } from 'lucide-react'
 
 export const ApiKeySettings = () => {
     const [openAIKey, setOpenAIKey] = useState('')
     const [hfKey, setHfKey] = useState('')
     const [openAISaved, setOpenAISaved] = useState(false)
     const [hfSaved, setHfSaved] = useState(false)
-    const [originalOpenAI, setOriginalOpenAI] = useState('')
-    const [originalHF, setOriginalHF] = useState('')
+    const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
-        const savedOpenAI = localStorage.getItem('OPENAI_KEY') || ''
-        const savedHF = localStorage.getItem('HF_KEY') || ''
-        setOpenAIKey(savedOpenAI)
-        setHfKey(savedHF)
-        setOriginalOpenAI(savedOpenAI)
-        setOriginalHF(savedHF)
+        const fetchKeys = async () => {
+            try {
+                const response = await fetch('/api/keys/get', {
+                    credentials: 'include'
+                })
+                const { openai, hf } = await response.json()
+                setOpenAIKey(openai || '')
+                setHfKey(hf || '')
+                setIsMounted(true)
+            } catch (error) {
+                console.error('Failed to load keys:', error)
+                setIsMounted(true)
+            }
+        }
+        fetchKeys()
     }, [])
-
-    // const handleSave = (type: 'openai' | 'hf', value: string) => {
-    //     try {
-    //         if (type === 'openai') {
-    //             localStorage.setItem('OPENAI_KEY', value)
-    //             setOriginalOpenAI(value)
-    //             setOpenAISaved(true)
-    //             setTimeout(() => setOpenAISaved(false), 2000)
-    //         } else {
-    //             localStorage.setItem('HF_KEY', value)
-    //             setOriginalHF(value)
-    //             setHfSaved(true)
-    //             setTimeout(() => setHfSaved(false), 2000)
-    //         }
-    //     } catch (error) {
-    //         console.error('Failed to save key:', error)
-    //     }
-    // }
 
     const handleSave = async (type: 'openai' | 'hf', value: string) => {
         try {
             const response = await fetch('/api/keys/set', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    keyType: type,
-                    value
-                }) 
+                body: JSON.stringify({ keyType: type, value }),
+                credentials: 'include'
             })
 
             if (response.ok) {
@@ -54,47 +42,60 @@ export const ApiKeySettings = () => {
                 } else {
                     setHfSaved(true);
                 }
+
+                setTimeout(() => {
+                    if (type === 'openai') {
+                        setOpenAISaved(false);
+                    } else {
+                        setHfSaved(false);
+                    }
+                }, 2000)
             }
         } catch (error) {
             console.error('Save failed:', error)
         }
     }
 
-    const getKeyStatus = (current: string, original: string) => {
-        if (!current && !original) return 'empty'
-        if (current !== original) return 'unsaved'
+    const handleClearKeys = async () => {
+        try {
+            await fetch('/api/keys/clear', {
+                method: 'POST',
+                credentials: 'include'
+            })
+            setOpenAIKey('')
+            setHfKey('')
+        } catch (error) {
+            console.error('Failed to clear keys:', error)
+        }
+    }
+
+    const getKeyStatus = (current: string) => {
+        if (!current) return 'empty'
         if (current.startsWith('sk-') || current.startsWith('hf_')) return 'valid'
         return 'invalid'
     }
 
-    const openAIStatus = getKeyStatus(openAIKey, originalOpenAI)
-    const hfStatus = getKeyStatus(hfKey, originalHF)
+    if (!isMounted) return null
 
     return (
-        <div className="sm:col-span-2 p-6 bg-neutral-900/50 rounded-xl border border-neutral-800 mb-8">
-            {/* Security Disclaimer */}
-            <div className="bg-rose-900/20 p-4 rounded-lg mb-6 border border-rose-800/50">
+        <div className="sm:col-span-2 p-6 bg-neutral-900/50 rounded-xl border border-neutral-800 mb-8 space-y-8">
+            <div className="bg-neutral-900/70 p-4 rounded-lg mb-6 border border-neutral-800">
                 <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-2">
-                        <p className="text-sm text-rose-300">
-                            API keys are stored in browser storage only. Clear them when using shared devices.
+                    <Info className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-3">
+                        <p className="text-sm text-neutral-300">
+                            For sustained analysis quality, we recommend providing your own API keys.
+                            Each month includes <span className="font-medium text-emerald-500">2,586 free MNLI requests </span>
+                            (≈ 25 full analyses) across all users. Heavy usage may require personal keys.
                         </p>
-                        <button
-                            onClick={() => {
-                                localStorage.clear()
-                                setOpenAIKey('')
-                                setHfKey('')
-                            }}
-                            className="cursor-pointer text-xs text-rose-400 hover:text-rose-300 transition-colors"
-                        >
-                            Clear All Keys
-                        </button>
+                        <p className="text-sm text-neutral-400">
+                            Current models: GPT-4o (OpenAI) • BART-MNLI (Hugging Face)<br />
+                            Keys are stored locally and never sent to our servers
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* API Key Inputs */}
             <div className="space-y-6">
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -102,8 +103,7 @@ export const ApiKeySettings = () => {
                             OpenAI API Key
                         </label>
                         <span className="text-xs text-neutral-500">
-                            {openAIStatus === 'valid' && 'Valid format'}
-                            {openAIStatus === 'invalid' && 'Invalid key format'}
+                            {getKeyStatus(openAIKey) === 'valid' ? 'Valid format' : ' '}
                         </span>
                     </div>
                     <div className="flex flex-wrap gap-2 relative">
@@ -111,16 +111,16 @@ export const ApiKeySettings = () => {
                             type="password"
                             value={openAIKey}
                             onChange={(e) => setOpenAIKey(e.target.value.trim())}
-                            placeholder="sk-...xxxx"
-                            className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${openAIStatus === 'invalid'
+                            placeholder={openAIKey ? '••••••••' : 'sk-...xxxx'}
+                            className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${getKeyStatus(openAIKey) === 'invalid'
                                 ? 'border-rose-500/50 focus:border-rose-500'
                                 : 'border-neutral-800 focus:border-emerald-500/50'
                                 }`}
                         />
                         <button
                             onClick={() => handleSave('openai', openAIKey)}
-                            disabled={openAIStatus !== 'unsaved'}
-                            className={`px-4 py-2 border rounded-lg text-sm transition-all ${openAIStatus === 'unsaved'
+                            disabled={!openAIKey || getKeyStatus(openAIKey) !== 'valid'}
+                            className={`px-4 py-2 border rounded-lg text-sm transition-all ${getKeyStatus(openAIKey) === 'valid'
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
                                 : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
                                 }`}
@@ -143,8 +143,7 @@ export const ApiKeySettings = () => {
                             HuggingFace API Key
                         </label>
                         <span className="text-xs text-neutral-500">
-                            {hfStatus === 'valid' && 'Valid format'}
-                            {hfStatus === 'invalid' && 'Invalid key format'}
+                            {getKeyStatus(hfKey) === 'valid' ? 'Valid format' : ' '}
                         </span>
                     </div>
                     <div className="flex flex-wrap gap-2 relative">
@@ -152,16 +151,16 @@ export const ApiKeySettings = () => {
                             type="password"
                             value={hfKey}
                             onChange={(e) => setHfKey(e.target.value.trim())}
-                            placeholder="hf_...xxxx"
-                            className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${hfStatus === 'invalid'
+                            placeholder={hfKey ? '••••••••' : 'hf_...xxxx'}
+                            className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${getKeyStatus(hfKey) === 'invalid'
                                 ? 'border-rose-500/50 focus:border-rose-500'
                                 : 'border-neutral-800 focus:border-emerald-500/50'
                                 }`}
                         />
                         <button
                             onClick={() => handleSave('hf', hfKey)}
-                            disabled={hfStatus !== 'unsaved'}
-                            className={`px-4 py-2 border rounded-lg text-sm transition-all ${hfStatus === 'unsaved'
+                            disabled={!hfKey || getKeyStatus(hfKey) !== 'valid'}
+                            className={`px-4 py-2 border rounded-lg text-sm transition-all ${getKeyStatus(hfKey) === 'valid'
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
                                 : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
                                 }`}
@@ -174,6 +173,23 @@ export const ApiKeySettings = () => {
                             ) : (
                                 'Save'
                             )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-rose-900/20 p-4 rounded-lg mb-6 border border-rose-800/50">
+                <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                        <p className="text-sm text-rose-300">
+                            API keys are stored securely in HTTP-only cookies.
+                            They will persist across sessions until explicitly cleared.
+                        </p>
+                        <button
+                            onClick={handleClearKeys}
+                            className="cursor-pointer text-xs text-rose-400 hover:text-rose-300 transition-colors"
+                        >
+                            Clear All Keys
                         </button>
                     </div>
                 </div>
