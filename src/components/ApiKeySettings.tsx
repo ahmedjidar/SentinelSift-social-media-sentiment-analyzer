@@ -19,21 +19,44 @@ export const ApiKeySettings = () => {
         setOriginalHF(savedHF)
     }, [])
 
-    const handleSave = (type: 'openai' | 'hf', value: string) => {
+    // const handleSave = (type: 'openai' | 'hf', value: string) => {
+    //     try {
+    //         if (type === 'openai') {
+    //             localStorage.setItem('OPENAI_KEY', value)
+    //             setOriginalOpenAI(value)
+    //             setOpenAISaved(true)
+    //             setTimeout(() => setOpenAISaved(false), 2000)
+    //         } else {
+    //             localStorage.setItem('HF_KEY', value)
+    //             setOriginalHF(value)
+    //             setHfSaved(true)
+    //             setTimeout(() => setHfSaved(false), 2000)
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to save key:', error)
+    //     }
+    // }
+
+    const handleSave = async (type: 'openai' | 'hf', value: string) => {
         try {
-            if (type === 'openai') {
-                localStorage.setItem('OPENAI_KEY', value)
-                setOriginalOpenAI(value)
-                setOpenAISaved(true)
-                setTimeout(() => setOpenAISaved(false), 2000)
-            } else {
-                localStorage.setItem('HF_KEY', value)
-                setOriginalHF(value)
-                setHfSaved(true)
-                setTimeout(() => setHfSaved(false), 2000)
+            const response = await fetch('/api/keys/set', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    keyType: type,
+                    value
+                }) 
+            })
+
+            if (response.ok) {
+                if (type === 'openai') {
+                    setOpenAISaved(true);
+                } else {
+                    setHfSaved(true);
+                }
             }
         } catch (error) {
-            console.error('Failed to save key:', error)
+            console.error('Save failed:', error)
         }
     }
 
@@ -90,16 +113,16 @@ export const ApiKeySettings = () => {
                             onChange={(e) => setOpenAIKey(e.target.value.trim())}
                             placeholder="sk-...xxxx"
                             className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${openAIStatus === 'invalid'
-                                    ? 'border-rose-500/50 focus:border-rose-500'
-                                    : 'border-neutral-800 focus:border-emerald-500/50'
+                                ? 'border-rose-500/50 focus:border-rose-500'
+                                : 'border-neutral-800 focus:border-emerald-500/50'
                                 }`}
                         />
                         <button
                             onClick={() => handleSave('openai', openAIKey)}
                             disabled={openAIStatus !== 'unsaved'}
                             className={`px-4 py-2 border rounded-lg text-sm transition-all ${openAIStatus === 'unsaved'
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
-                                    : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
+                                : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
                                 }`}
                         >
                             {openAISaved ? (
@@ -131,16 +154,16 @@ export const ApiKeySettings = () => {
                             onChange={(e) => setHfKey(e.target.value.trim())}
                             placeholder="hf_...xxxx"
                             className={`outline-none transition-all flex-1 bg-neutral-900/30 border rounded-lg px-4 py-2 text-sm placeholder-neutral-600 ${hfStatus === 'invalid'
-                                    ? 'border-rose-500/50 focus:border-rose-500'
-                                    : 'border-neutral-800 focus:border-emerald-500/50'
+                                ? 'border-rose-500/50 focus:border-rose-500'
+                                : 'border-neutral-800 focus:border-emerald-500/50'
                                 }`}
                         />
                         <button
                             onClick={() => handleSave('hf', hfKey)}
                             disabled={hfStatus !== 'unsaved'}
                             className={`px-4 py-2 border rounded-lg text-sm transition-all ${hfStatus === 'unsaved'
-                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
-                                    : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20'
+                                : 'bg-neutral-900/10 border-neutral-800/50 text-neutral-600 cursor-not-allowed'
                                 }`}
                         >
                             {hfSaved ? (

@@ -1,75 +1,75 @@
-// lib/encryption.ts
-import { webcrypto } from 'crypto'
-
 export interface EncryptedData {
-  iv: string
-  ciphertext: string
-  tag: string
+  iv: string;
+  ciphertext: string;
+  tag: string;
 }
 
 export async function encrypt(text: string): Promise<string> {
-  const iv = webcrypto.getRandomValues(new Uint8Array(12))
-  const key = await getCryptoKey()
+  const encoder = new TextEncoder();
+  const data = encoder.encode(text);
   
-  const encrypted = await webcrypto.subtle.encrypt(
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await getCryptoKey();
+
+  const ciphertext = await crypto.subtle.encrypt(
     {
       name: 'AES-GCM',
-      iv,
+      iv: iv,
       tagLength: 128
     },
     key,
-    new TextEncoder().encode(text)
-  )
+    data
+  );
 
-  const ciphertext = new Uint8Array(encrypted)
-  const tag = ciphertext.slice(-16)
-  const data = ciphertext.slice(0, -16)
+  const combined = new Uint8Array(iv.byteLength + ciphertext.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(ciphertext), iv.byteLength);
 
-  return JSON.stringify({
-    iv: bufferToBase64(iv),
-    ciphertext: bufferToBase64(data),
-    tag: bufferToBase64(tag)
-  })
+  return bufferToBase64(combined);
 }
 
 export async function decrypt(encrypted: string): Promise<string> {
-  const { iv, ciphertext, tag } = JSON.parse(encrypted)
-  const key = await getCryptoKey()
-  
-  const data = new Uint8Array([
-    ...base64ToBuffer(ciphertext),
-    ...base64ToBuffer(tag)
-  ])
+  if(!encrypted) return '';
 
-  const decrypted = await webcrypto.subtle.decrypt(
+  const combined = base64ToBuffer(encrypted);
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+
+  const key = await getCryptoKey();
+  
+  const decrypted = await crypto.subtle.decrypt(
     {
       name: 'AES-GCM',
-      iv: base64ToBuffer(iv)
+      iv: iv,
+      tagLength: 128
     },
     key,
-    data
-  )
+    ciphertext
+  );
 
-  return new TextDecoder().decode(decrypted)
+  return new TextDecoder().decode(decrypted);
 }
 
-// Helpers
+// // helper functions
 async function getCryptoKey(): Promise<CryptoKey> {
-  const rawKey = base64ToBuffer(process.env.ENCRYPTION_KEY!)
-  return webcrypto.subtle.importKey(
+  const rawKey = base64ToBuffer(String(process.env.ENCRYPTION_KEY!));
+  return crypto.subtle.importKey(
     'raw',
     rawKey,
     { name: 'AES-GCM' },
     false,
     ['encrypt', 'decrypt']
-  )
+  );
 }
 
-function bufferToBase64(buffer: Uint8Array): string {
-  return Buffer.from(buffer).toString('base64')
+function bufferToBase64(buffer: ArrayBuffer|Uint8Array): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
 function base64ToBuffer(base64: string): Uint8Array {
-  return Buffer.from(base64, 'base64')
+  return new Uint8Array(
+    atob(base64)
+      .split('')
+      .map(c => c.charCodeAt(0))
+  );
 }
-

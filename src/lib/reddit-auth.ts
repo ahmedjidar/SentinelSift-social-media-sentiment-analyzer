@@ -42,7 +42,7 @@ export async function refreshToken() {
         }
       }
     );
-    console.log('Reddit token retrieved successfully:', response.data.access_token);
+
     return response.data.access_token;
   } catch (error) {
     console.error('Reddit authentication failed:');

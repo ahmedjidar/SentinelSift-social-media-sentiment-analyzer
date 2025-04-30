@@ -27,12 +27,9 @@ export default function Home() {
   const analyzeSentiment = async (currentQuery?: string) => {
     setLoading(true)
     setError(null)
-    try {
+    try { 
       const finalQuery = currentQuery || query;
       let progress = 0
-
-      const userOpenAIKey = localStorage.getItem('OPENAI_KEY')
-      const userHFKey = localStorage.getItem('HF_KEY')
 
       const interval = setInterval(() => {
         progress = Math.min(progress + Math.random() * 10, 95)
@@ -46,10 +43,6 @@ export default function Home() {
           finalQuery, 
           timeFilter, 
           limit, 
-          apiKeys: {
-            openai: userOpenAIKey,
-            hf: userHFKey
-          }
         })
       })
 

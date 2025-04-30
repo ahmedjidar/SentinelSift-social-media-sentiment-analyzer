@@ -1,20 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getRedditToken } from '@/lib/reddit-auth';
-import { buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, validateRequest } from '@/app/_utils/apiUtils';
-import { ratelimit } from '@/lib/rate-limit';
+import { AvailableKeyOptions, buildSearchParams, fetchRedditData, getRedditHeaders, processPosts, validateRequest } from '@/app/_utils/apiUtils';
+// import { ratelimit } from '@/lib/rate-limit';
+import { decrypt } from '@/lib/encryption';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
-        const ip = req.headers.get('x-forwarded-for') || '127.0.0.1'
-        const { success } = await ratelimit.limit(ip)
+        // const ip = req.headers.get('x-forwarded-for') || '127.0.0.1'
+        // const { success } = await ratelimit.limit(ip)
 
-        if (!success) {
-            return NextResponse.json(
-                { error: 'Too many requests. Please try again in a minute.' },
-                { status: 429 }
-            )
+        // if (!success) {
+        //     return NextResponse.json(
+        //         { error: 'Too many requests. Please try again in a minute.' },
+        //         { status: 429 }
+        //     )
+        // }
+
+        const cookies = req.cookies;
+        const encryptedOpenAI = cookies.get('secure_openai_key')?.value;
+        const encryptedHF = cookies.get('secure_hf_key')?.value;
+
+        const [openAIKey, hfKey] = await Promise.all([
+        encryptedOpenAI ? decrypt(encryptedOpenAI) : Promise.resolve(''),
+        encryptedHF ? decrypt(encryptedHF) : Promise.resolve('')
+        ]);
+
+        console.log("Decrypted OpenAI Key:", openAIKey);
+
+        const apiKeys: AvailableKeyOptions = {
+            openai: openAIKey,
+            hf: hfKey
         }
-        const { finalQuery, timeFilter = 'all', limit = 10, apiKeys } = await req.json();
+     
+        const { finalQuery, timeFilter = 'all', limit = 10 } = await req.json();
         const query = finalQuery?.trim();
         const token = await getRedditToken();
 
