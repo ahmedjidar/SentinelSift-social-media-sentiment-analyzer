@@ -50,7 +50,7 @@ export async function decrypt(encrypted: string): Promise<string> {
   return new TextDecoder().decode(decrypted);
 }
 
-// // helper functions
+// helper functions
 async function getCryptoKey(): Promise<CryptoKey> {
   const rawKey = base64ToBuffer(String(process.env.ENCRYPTION_KEY!));
   return crypto.subtle.importKey(

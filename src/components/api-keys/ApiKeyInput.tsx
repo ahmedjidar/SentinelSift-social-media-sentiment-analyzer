@@ -1,5 +1,3 @@
-'use client'
-
 import { CheckCircle } from "lucide-react"
 
 export interface ApiKeyInputProps {
@@ -19,8 +17,8 @@ export const ApiKeyInput = ({
     onSave,
     setKey,
 }: ApiKeyInputProps) => {
-      const label = type === 'openai' ? 'OpenAI API Key' : 'HuggingFace API Key'
-  const placeholder = type === 'openai' ? 'sk-...xxxx' : 'hf_...xxxx'
+    const label = type === 'openai' ? 'OpenAI API Key' : 'HuggingFace API Key'
+    const placeholder = type === 'openai' ? 'sk-...xxxx' : 'hf_...xxxx'
     return (
         <div className="space-y-3">
             <div className="flex items-center justify-between">

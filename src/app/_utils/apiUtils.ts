@@ -73,7 +73,7 @@ export async function fetchRedditData(
             status: response.status,
             error: errorText
         });
-        throw new APIError(`Reddit API Error: ${response.statusText}`);
+        throw new APIError(`Reddit API Error (That one Famous Unexplainable '403: Blocked' Error. Contact Me): ${response.statusText}`);
     }
 
     const contentType = response.headers.get('content-type');

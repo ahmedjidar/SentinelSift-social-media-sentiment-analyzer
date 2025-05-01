@@ -1,6 +1,6 @@
 'use client'
 import { FC } from 'react'
-import html2canvas from 'html2canvas'
+import html2canvas from 'html2canvas-pro'
 
 interface ExportReportButtonProps {
   elementId: string

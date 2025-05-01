@@ -1,10 +1,7 @@
-// components/AppIdentityCard.tsx
-'use client'
 import { Code, GitBranch, User } from 'lucide-react'
 
 export const AppIdentityCard = () => (
   <div className="sm:col-span-2 p-6 bg-neutral-900/50 rounded-xl border border-neutral-800 space-y-5 mb-8">
-    {/* App Name & Logo */}
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30">
         <span className="text-2xl bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
@@ -21,7 +18,6 @@ export const AppIdentityCard = () => (
       </div>
     </div>
 
-    {/* Metadata Grid */}
     <div className="grid gap-3 text-sm">
       <div className="flex items-center gap-2 text-neutral-300">
         <Code className="w-4 h-4 text-emerald-500" />
@@ -46,14 +42,12 @@ export const AppIdentityCard = () => (
       </a>
     </div>
 
-    {/* Description */}
     <p className="text-sm text-neutral-400 pt-4 border-t border-neutral-800/50">
       SentinelSift employs neuro-symbolic AI to analyze community sentiment patterns, 
       protecting digital ecosystems from cognitive dissonance through adaptive 
       anomaly detection. Licensed under Oky Open Sentiment Agreement v3.
     </p>
 
-    {/* Tech Stack */}
     <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-800/50">
       {['Next.js', 'HuggingFace', 'Redis', 'OpenAI', 'Reddit API'].map((tech) => (
         <span 

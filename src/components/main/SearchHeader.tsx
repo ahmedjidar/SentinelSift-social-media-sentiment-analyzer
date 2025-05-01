@@ -1,4 +1,5 @@
 'use client'
+
 import { FC, useState, useEffect, useRef } from 'react'
 import { Search, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,6 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
 
   return (
     <>
-      {/* Trigger Button */}
       <div className="relative w-full">
         <div
           onClick={() => setIsSearchFocused(true)}
@@ -56,7 +56,6 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
         </Button>
       </div>
 
-      {/* Search Modal */}
       {isSearchFocused && ReactDOM.createPortal(
         <div
           className="fixed inset-0 z-50 backdrop-blur-sm bg-neutral-950/50"
@@ -93,7 +92,6 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
                 </button>
               </div>
 
-              {/* Suggestions Dropdown */}
               <div className="border-t border-neutral-800/50 mt-2 pt-2">
                 <div className="text-xs text-neutral-500 px-4 py-2">
                   Recent searches

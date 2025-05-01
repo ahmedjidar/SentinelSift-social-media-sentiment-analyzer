@@ -1,3 +1,5 @@
+'use client'
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export const SentimentLineChart = ({ data }: { data: Array<{ 

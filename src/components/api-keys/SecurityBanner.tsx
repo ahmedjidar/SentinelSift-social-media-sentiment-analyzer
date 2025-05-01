@@ -1,5 +1,3 @@
-'use client'
-
 import { AlertCircle } from "lucide-react"
 
 export const SecurityBanner = ({ onClear }: { onClear: () => void }) => {

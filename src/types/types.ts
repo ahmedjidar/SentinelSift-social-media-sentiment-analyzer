@@ -1,4 +1,3 @@
-// types.ts
 export interface Post {
   title: string
   content: string
@@ -24,6 +23,13 @@ export interface SentimentResult {
 export type SentimentData = {
   name: string
   value: number
+}[]
+
+export type LineData = {
+  time: string;
+  positive: number;
+  negative: number;
+  neutral: number;
 }[]
 
 export type ErrorType =

@@ -10,14 +10,12 @@ interface PostItemProps {
 export const PostItem: FC<PostItemProps> = ({ post }) => (
   <div className="relative p-4 rounded-lg bg-neutral-900/70 border border-neutral-700 hover:border-neutral-800 transition-colors flex flex-col md:flex-row flex-wrap gap-4">
 
-    {/* Colored sentiment bar */}
     <div
       className={`w-2 rounded-full ${post.sentiment === 'positive' ? 'bg-emerald-600' :
           post.sentiment === 'negative' ? 'bg-rose-600' : 'bg-sky-600'
         }`}
     />
 
-    {/* Main content */}
     <div className="flex-1 flex flex-col">
       <div className='w-full flex items-start justify-between gap-4 mb-2'>
         <Link
@@ -27,7 +25,7 @@ export const PostItem: FC<PostItemProps> = ({ post }) => (
         >
           {post.title}
         </Link>
-        {/* Sentiment badge */}
+
         <span
           className={`px-3 py-1 rounded-full text-sm font-medium ${post.sentiment === 'positive' ? 'bg-green-900/30 text-emerald-400' :
               post.sentiment === 'negative' ? 'bg-red-900/30 text-rose-400' : 'bg-blue-900/30 text-sky-400'
