@@ -85,48 +85,39 @@ export async function fetchRedditData(
     return response.json();
 }
 
-export async function providerSelector(apiKeys: AvailableKeyOptions): Promise<string> {
-    if (!apiKeys) return String(process.env.USE_FALLBACK_STRATEGY)
-    // const useOpenAI = apiKeys?.openai && await validateApiKey('openai', apiKeys.openai)
-    // const useHF = apiKeys?.hf && await validateApiKey('hf', apiKeys.hf)
+export async function providerSelector(
+    apiKeys: AvailableKeyOptions
+): Promise<{ provider: string; switched: boolean }> {
+    const switched = { value: false };
 
-    // const fallbackStrategy = () => {
-    //     if (useHF) return 'hf'
-    //     if (useOpenAI) return 'openai'
-    //     return String(process.env.USE_FALLBACK_STRATEGY)
-    // }
+    const useOpenAI = apiKeys?.openai && await validateApiKey('openai', apiKeys.openai);
+    const useHF = apiKeys?.hf && await validateApiKey('hf', apiKeys.hf);
 
-    // return fallbackStrategy()
+    const fallback = String(process.env.USE_FALLBACK_STRATEGY);
 
-    if (apiKeys.openai) {
-        const ok = await validateApiKey('openai', apiKeys.openai);
-        if (!ok) {
-            throw new APIError(
-                'OpenAI key rejected by the API, please re-enter a valid key'
-            );
-        }
-    }
-    
-    if (apiKeys.hf) {
-        const ok = await validateApiKey('hf', apiKeys.hf);
-        if (!ok) {
-            throw new APIError(
-                'Hugging Face key rejected by the API, please re-enter a valid key'
-            );
-        }
-    }
+    // if we're switching from user-provided to fallback
+    const hasKeyButInvalid = (apiKeys.openai && !useOpenAI) || (apiKeys.hf && !useHF);
+    switched.value = !!hasKeyButInvalid;
 
-    if (apiKeys.openai) return 'openai';
-    if (apiKeys.hf) return 'hf';
+    const provider =
+        useHF ? 'hf' :
+            useOpenAI ? 'openai' :
+                fallback;
 
-    return String(process.env.USE_FALLBACK_STRATEGY);
+    return { provider, switched: switched.value };
 }
 
 export async function processPosts(
     data: RedditResponse,
     apiKeys: AvailableKeyOptions
-): Promise<{ analysis: string[]; counts: SentimentCounts; redditPosts: RedditChild[] }> {
+): Promise<{
+    analysis: string[];
+    counts: SentimentCounts;
+    redditPosts: RedditChild[];
+    switched: boolean;
+}> {
     const redditPosts = data.data.children;
+    let switched = false;
 
     const posts = redditPosts.map(child =>
         (child.data.title + ' ' + child.data.selftext).substring(0, 200)
@@ -135,28 +126,31 @@ export async function processPosts(
     const analysis = await Promise.all(
         posts.map(async (text) => {
             try {
-                if (await providerSelector(apiKeys) === 'openai') {
-                    return await _OAITextClassifier(text, apiKeys.openai)
+                const { provider, switched: s } = await providerSelector(apiKeys);
+                if (s) switched = true;
+
+                if (provider === 'openai') {
+                    return await _OAITextClassifier(text, apiKeys.openai!);
                 }
-                if (await providerSelector(apiKeys) === 'hf') {
-                    return await _FB_MNLITextClassifier(text, apiKeys.hf)
+                if (provider === 'hf') {
+                    return await _FB_MNLITextClassifier(text, apiKeys.hf!);
                 }
-                return await _FallbackClassifier(text)
+                return await _FallbackClassifier(text);
             } catch (error) {
                 if (error instanceof AnalysisError) throw error
                 throw new APIError('Unexpected API Error. Try clearing the keys and proceed using the fallback model')
             }
         })
-    )
+    );
 
+    // Existing count logic remains same
     const counts: SentimentCounts = { positive: 0, negative: 0, neutral: 0 };
-
     analysis.forEach(label => {
         const cleanLabel = label.toLowerCase().trim() as keyof SentimentCounts;
         counts[cleanLabel in counts ? cleanLabel : 'neutral']++;
     });
 
-    return { analysis, counts, redditPosts };
+    return { analysis, counts, redditPosts, switched };
 }
 
 // HF inference ZS-classifier

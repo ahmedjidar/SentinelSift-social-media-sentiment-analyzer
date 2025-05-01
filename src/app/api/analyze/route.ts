@@ -32,11 +32,12 @@ export async function POST(req: NextRequest) {
 
         const searchParams = buildSearchParams(query, timeFilter, limit);
         const data = await fetchRedditData(getRedditHeaders(token), searchParams);
-        const { analysis, counts, redditPosts } = await processPosts(data, apiKeys);
+        const { analysis, counts, redditPosts, switched } = await processPosts(data, apiKeys);
 
         return NextResponse.json({
             total: redditPosts.length,
             sentiment: counts,
+            switched,
             posts: redditPosts.map((child, index) => ({
                 title: child.data.title,
                 content: child.data.selftext,

@@ -15,8 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ApiKeySettings } from '@/components/ApiKeySettings'
 import { AppIdentityCard } from '@/components/SourceInfo'
 
-// refactor page.tsx, apiKeySettings.tsx
-
 export default function Home() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<SentimentResult | null>(null)
@@ -57,6 +55,8 @@ export default function Home() {
       }
 
       const data = await response.json()
+      console.log()
+      if (data.switched) alert('Fallback activated due to invalid keys');
       setResults(data)
 
     } catch (err) {
