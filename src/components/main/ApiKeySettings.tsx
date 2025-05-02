@@ -1,23 +1,22 @@
 'use client'
 
-import { useApiKeys } from '@/hooks/useApiKeys'
 import { InfoBanner } from '../api-keys/InfoBanner'
 import { ApiKeyInput } from '../api-keys/ApiKeyInput'
 import { SecurityBanner } from '../api-keys/SecurityBanner'
+import { UseApiKeysProps } from '@/types/types'
 
-export const ApiKeySettings = () => {
-    const {
-        openAIKey,
-        setOpenAIKey,
-        hfKey,
-        setHfKey,
-        openAISaved,
-        hfSaved,
-        isMounted, 
-        handleSave,
-        handleClearKeys,
-        getKeyStatus
-    } = useApiKeys()
+export const ApiKeySettings = ({
+    openAIKey,
+    setOpenAIKey,
+    hfKey,
+    setHfKey,
+    openAISaved,
+    hfSaved,
+    isMounted,
+    handleSave,
+    handleClearKeys,
+    getKeyStatus
+}: UseApiKeysProps) => {
 
     if (!isMounted) return null
 
@@ -29,7 +28,7 @@ export const ApiKeySettings = () => {
                     type='openai'
                     value={openAIKey}
                     saved={openAISaved}
-                    status={getKeyStatus(openAIKey)}
+                    status={getKeyStatus('openai')}
                     onSave={(value: string) => handleSave('openai', value)}
                     setKey={(value: string) => setOpenAIKey(value)}
                 />
@@ -37,7 +36,7 @@ export const ApiKeySettings = () => {
                     type='hf'
                     value={hfKey}
                     saved={hfSaved}
-                    status={getKeyStatus(hfKey)}
+                    status={getKeyStatus('hf')}
                     onSave={(value: string) => handleSave('hf', value)}
                     setKey={(value: string) => setHfKey(value)}
                 />

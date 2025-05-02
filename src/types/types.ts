@@ -1,3 +1,5 @@
+import { Dispatch, SetStateAction } from 'react'
+
 export interface Post {
   title: string
   content: string
@@ -20,6 +22,35 @@ export interface SentimentResult {
   posts: Post[]
 }
 
+export interface UseApiKeysProps {
+  openAIKey: string
+  setOpenAIKey: Dispatch<SetStateAction<string>>
+  hfKey: string
+  setHfKey: Dispatch<SetStateAction<string>>
+  openAISaved: boolean
+  hfSaved: boolean
+  isMounted: boolean
+  handleSave: (type: "openai" | "hf", value: string) => Promise<void>
+  handleClearKeys: () => Promise<void>
+  getKeyStatus: (service: "openai" | "hf") => "valid" | "invalid" | "loading" | "empty"
+}
+
+export interface ValidationStatus {
+  openai: ServiceState;
+  hf: ServiceState;
+}
+
+export interface ValidationStatusProps {
+  status: ValidationStatus;
+}
+
+export interface AppError {
+  type: ErrorType
+  message: string
+}
+
+export type ServiceState = 'empty' | 'valid' | 'invalid' | 'loading';
+
 export type SentimentData = {
   name: string
   value: number
@@ -40,7 +71,3 @@ export type ErrorType =
   | 'INTERNAL'
   | null
 
-export interface AppError {
-  type: ErrorType
-  message: string
-}

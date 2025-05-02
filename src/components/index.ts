@@ -11,6 +11,7 @@ import { ApiKeySettings } from "./main/ApiKeySettings";
 import { AppIdentityCard } from "./main/SourceInfo";
 import { EmptyState } from "./main/EmptyState";
 import { ResultsView } from "./main/ResultsView";
+import { CurrentModelsUsed } from "./main/CurrentModelsUsed";
 import MainApp from "./MainApp";
 
 export {
@@ -28,4 +29,5 @@ export {
     AppIdentityCard,
     EmptyState,
     ResultsView,
+    CurrentModelsUsed,
 }

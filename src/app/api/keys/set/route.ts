@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { encrypt } from '@/lib/encryption'
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { keyType, value } = await req.json()
     

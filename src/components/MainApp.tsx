@@ -8,21 +8,36 @@ import { LoadingOverlay } from "@/components/main/LoadingOverlay"
 import { ResultsView } from "@/components/main/ResultsView"
 import { useSentimentAnalysis } from "@/hooks/useSentimentAnalysis"
 import { childVariants, mainVariants, MotionApiKeySettings, MotionAppIdentityCard } from "@/components/main/motion-wrappers"
+import { useApiKeys } from '@/hooks/useApiKeys'
 
 export default function MainApp() {
-  const { 
-    query, 
-    setQuery, 
-    results, 
-    loading, 
-    loadingProgress, 
-    error, 
-    timeFilter, 
-    setTimeFilter, 
-    limit, 
-    setLimit, 
-    analyzeSentiment, 
+  const {
+    query,
+    setQuery,
+    results,
+    loading,
+    loadingProgress,
+    error,
+    timeFilter,
+    setTimeFilter,
+    limit,
+    setLimit,
+    analyzeSentiment,
     lineData } = useSentimentAnalysis()
+
+  const {
+    openAIKey,
+    setOpenAIKey,
+    hfKey,
+    setHfKey,
+    openAISaved,
+    hfSaved,
+    isMounted,
+    handleSave,
+    handleClearKeys,
+    getKeyStatus,
+    validationStatus
+  } = useApiKeys()
 
   return (
     <motion.main
@@ -31,8 +46,19 @@ export default function MainApp() {
       variants={mainVariants}
       className="main-container min-h-screen bg-neutral-950 text-neutral-100 p-8 sm:grid sm:grid-cols-8 gap-4"
     >
-      <MotionApiKeySettings />
-    
+      <MotionApiKeySettings 
+        openAIKey={openAIKey}
+        setOpenAIKey={setOpenAIKey}
+        hfKey={hfKey}
+        setHfKey={setHfKey}
+        openAISaved={openAISaved}
+        hfSaved={hfSaved}
+        isMounted={isMounted}
+        handleSave={handleSave}
+        handleClearKeys={handleClearKeys}
+        getKeyStatus={getKeyStatus}
+      />
+
       <div className="sm:col-span-4 space-y-4">
         <motion.div variants={childVariants} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <SearchHeader
@@ -84,8 +110,8 @@ export default function MainApp() {
           </motion.div>
         )}
       </div>
-      
-      <MotionAppIdentityCard />
+
+      <MotionAppIdentityCard status={validationStatus}/>
     </motion.main>
   )
 }

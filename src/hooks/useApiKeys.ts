@@ -8,14 +8,29 @@ export const useApiKeys = () => {
   const [openAISaved, setOpenAISaved] = useState(false)
   const [hfSaved, setHfSaved] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [validationStatus, setValidationStatus] = useState<{
+    openai: 'valid' | 'invalid' | 'loading' | 'empty';
+    hf: 'valid' | 'invalid' | 'loading' | 'empty';
+  }>({
+    openai: 'empty',
+    hf: 'empty'
+  });
 
   useEffect(() => {
     const fetchKeys = async () => {
       try {
         const response = await fetch('/api/keys/get', { credentials: 'include' })
         const { openai, hf } = await response.json()
+
         setOpenAIKey(openai || '')
         setHfKey(hf || '')
+
+        setValidationStatus(prev => ({
+          ...prev,
+          openai: openai ? 'valid' : 'empty',
+          hf: hf ? 'valid' : 'empty'
+        }))
+
       } catch (error) {
         console.error('Failed to load keys:', error)
       } finally {
@@ -25,24 +40,56 @@ export const useApiKeys = () => {
     fetchKeys()
   }, [])
 
-  const handleSave = useCallback(async (type: 'openai' | 'hf', value: string) => {
+  const validateKey = useCallback(async (service: "openai" | "hf", key: string) => {
+    if (!key) return 'empty';
+
     try {
-      const response = await fetch('/api/keys/set', {
+      setValidationStatus(prev => ({ ...prev, [service]: 'loading' }));
+
+      const response = await fetch('/api/keys/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keyType: type, value }),
-        credentials: 'include'
-      })
+        body: JSON.stringify({ service, key })
+      });
 
-      if (response.ok) {
-        const setter = type === 'openai' ? setOpenAISaved : setHfSaved
-        setter(true)
-        setTimeout(() => setter(false), 2000)
+      if (!response.ok) throw new Error('Validation request failed');
+
+      const { valid } = await response.json();
+      const status = valid ? 'valid' : 'invalid';
+
+      setValidationStatus(prev => ({ ...prev, [service]: status }));
+      return status;
+
+    } catch (error) {
+      console.error("Validation error:", error);
+      setValidationStatus(prev => ({ ...prev, [service]: 'invalid' }));
+      return 'invalid';
+    }
+  }, []);
+
+  const handleSave = useCallback(async (type: 'openai' | 'hf', value: string) => {
+    try {
+      const status = await validateKey(type, value);
+
+      if (status === 'valid') {
+        const response = await fetch('/api/keys/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyType: type, value }),
+          credentials: 'include'
+        })
+
+        if (response.ok) {
+          const setter = type === 'openai' ? setOpenAISaved : setHfSaved
+          setter(true)
+          setTimeout(() => setter(false), 2000)
+
+        }
       }
     } catch (error) {
       console.error('Save failed:', error)
     }
-  }, [])
+  }, [validateKey, setOpenAISaved, setHfSaved])
 
   const handleClearKeys = useCallback(async () => {
     try {
@@ -54,11 +101,9 @@ export const useApiKeys = () => {
     }
   }, [])
 
-  const getKeyStatus = useCallback((current: string) => {
-    if (!current) return 'empty'
-    if (current.startsWith('sk-') || current.startsWith('hf_')) return 'valid'
-    return 'invalid'
-  }, [])
+  const getKeyStatus = useCallback((service: "openai" | "hf") => {
+    return validationStatus[service];
+  }, [validationStatus]);
 
   return {
     openAIKey,
@@ -67,6 +112,8 @@ export const useApiKeys = () => {
     setHfKey,
     openAISaved,
     hfSaved,
+    validationStatus,
+    validateKey,
     isMounted,
     handleSave,
     handleClearKeys,

@@ -1,7 +1,7 @@
 import { Code, GitBranch, User } from 'lucide-react'
 
 export const AppIdentityCard = () => (
-  <div className="sm:col-span-2 p-6 bg-neutral-900/50 rounded-xl border border-neutral-800 space-y-5 mb-8">
+  <div className="sm:col-span-2 p-6 bg-neutral-900/50 rounded-xl border border-neutral-800 space-y-5 mb-2">
     <div className="flex items-center gap-3">
       <div className="p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30">
         <span className="text-2xl bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
@@ -13,7 +13,7 @@ export const AppIdentityCard = () => (
           SentinelSift
         </h1>
         <p className="text-sm text-neutral-400 mt-0.5">
-          Cognitive Community Analysis Suite
+          Cognitive community analysis suite powered by OpenAI & Hugging Face
         </p>
       </div>
     </div>
@@ -21,31 +21,31 @@ export const AppIdentityCard = () => (
     <div className="grid gap-3 text-sm">
       <div className="flex items-center gap-2 text-neutral-300">
         <Code className="w-4 h-4 text-emerald-500" />
-        <span>v2.1.0</span>
+        <span>v1.0.0</span>
         <span className="text-neutral-500">|</span>
         <span className="text-emerald-400/80">Production</span>
       </div>
 
       <div className="flex items-center gap-2 text-neutral-300">
         <User className="w-4 h-4 text-emerald-500" />
-        <span>Oky Development Collective</span>
+        <span>ahmed-amin-jidar</span>
       </div>
 
       <a 
-        href="https://github.com/yourusername/sentinelsift" 
+        href="https://github.com/ahmedjidar/SentinelSift-social-media-sentiment-analyzer" 
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 text-neutral-300 hover:text-emerald-400 transition-colors"
       >
         <GitBranch className="w-4 h-4 text-emerald-500" />
-        <span>github.com/okycodes/sentinelsift</span>
+        <span className='underline'>github.com/ahmedjidar/sentinelsift...</span>
       </a>
     </div>
 
     <p className="text-sm text-neutral-400 pt-4 border-t border-neutral-800/50">
       SentinelSift employs neuro-symbolic AI to analyze community sentiment patterns, 
       protecting digital ecosystems from cognitive dissonance through adaptive 
-      anomaly detection. Licensed under Oky Open Sentiment Agreement v3.
+      anomaly detection.<br /> <br /> <i> FTC-compliant with truth-in-advertising. Licensed under MIT.</i>
     </p>
 
     <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-800/50">
