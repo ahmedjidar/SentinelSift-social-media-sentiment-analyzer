@@ -1,9 +1,5 @@
-import { AppError } from '@/types/types'
+import { ErrorMessageProps } from '@/types/types'
 import { FC } from 'react'
-
-interface ErrorMessageProps {
-  error: AppError | null
-}
 
 export const ErrorMessage: FC<ErrorMessageProps> = ({ error }) => {
   if (!error) return null

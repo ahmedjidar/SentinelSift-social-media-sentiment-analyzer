@@ -26,6 +26,16 @@
   }
 }
 
+@keyframes sparkle-pulse {
+  0% { background-size: 200% 200%; background-position: 0% 0%; }
+  50% { background-size: 150% 150%; background-position: 100% 100%; }
+  100% { background-size: 200% 200%; background-position: 0% 0%; }
+}
+
+.animate-sparkle-pulse {
+  animation: sparkle-pulse 3s ease-in-out infinite;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

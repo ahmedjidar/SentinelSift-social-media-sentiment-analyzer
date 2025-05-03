@@ -1,13 +1,9 @@
-import { CheckCircle, Loader2 } from "lucide-react"
+'use client'
 
-export interface ApiKeyInputProps {
-  type: 'openai' | 'hf'
-  value: string
-  saved: boolean
-  status: 'empty' | 'valid' | 'invalid' | 'loading'
-  onSave: (value: string) => void
-  setKey: (value: string) => void
-}
+import { ApiKeyInputProps } from "@/types/types"
+import { CheckCircle, Loader2 } from "lucide-react"
+import { CyberAlert } from "../alerts/CyberAlert"
+import { useEffect, useRef, useState } from "react"
 
 export const ApiKeyInput = ({
   type,
@@ -17,6 +13,27 @@ export const ApiKeyInput = ({
   onSave,
   setKey,
 }: ApiKeyInputProps) => {
+  const [localAlert, setLocalAlert] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+  const previousStatus = useRef(status)
+
+  useEffect(() => {
+    if (previousStatus.current !== status) {
+      if (status === 'valid') {
+        setLocalAlert({
+          type: 'success',
+          message: `${type.toUpperCase()} key validated successfully`
+        })
+      }
+      if (status === 'invalid') {
+        setLocalAlert({
+          type: 'error',
+          message: 'Invalid API key format or authentication failed'
+        })
+      }
+      previousStatus.current = status
+    }
+  }, [status, type])
+
   const label = type === 'openai' ? 'OpenAI API Key' : 'HuggingFace API Key'
   const placeholder = type === 'openai' ? 'sk-...xxxx' : 'hf_...xxxx'
 
@@ -77,6 +94,15 @@ export const ApiKeyInput = ({
           )}
         </button>
       </div>
+      {localAlert && (
+        <CyberAlert
+          type={localAlert.type}
+          title={`${type.toUpperCase()} Validation`}
+          message={localAlert.message}
+          duration={4000}
+          onClose={() => setLocalAlert(null)}
+        />
+      )}
     </div>
   )
 }

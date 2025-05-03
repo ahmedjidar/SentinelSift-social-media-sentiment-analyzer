@@ -1,10 +1,7 @@
 'use client'
 import { FC } from 'react'
 import html2canvas from 'html2canvas-pro'
-
-interface ExportReportButtonProps {
-  elementId: string
-}
+import { ExportReportButtonProps } from '@/types/types'
 
 export const ExportReportButton: FC<ExportReportButtonProps> = ({ elementId }) => {
   const captureScreenshot = () => {

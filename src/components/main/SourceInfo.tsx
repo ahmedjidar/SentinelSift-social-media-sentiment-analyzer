@@ -26,10 +26,15 @@ export const AppIdentityCard = () => (
         <span className="text-emerald-400/80">Production</span>
       </div>
 
-      <div className="flex items-center gap-2 text-neutral-300">
+      <a 
+        className="flex items-center gap-2 text-neutral-300 hover:text-emerald-400 transition-colors"
+        href="https://github.com/ahmedjidar" 
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         <User className="w-4 h-4 text-emerald-500" />
         <span>ahmed-amin-jidar</span>
-      </div>
+      </a>
 
       <a 
         href="https://github.com/ahmedjidar/SentinelSift-social-media-sentiment-analyzer" 

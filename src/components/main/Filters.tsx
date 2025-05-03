@@ -1,13 +1,7 @@
 'use client'
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-export interface FiltersProps {
-    timeFilter: string
-    setTimeFilter: (value: string) => void
-    limit: number
-    setLimit: (value: number) => void
-}
+import { FiltersProps } from '@/types/types'
 
 export const Filters = ({
     timeFilter,

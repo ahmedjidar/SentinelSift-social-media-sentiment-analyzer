@@ -1,11 +1,7 @@
 import { FC } from 'react'
-import { Post } from '@/types/types'
+import { PostItemProps } from '@/types/types'
 import { User, Hash, ArrowUp, MessageCircle, Clock } from 'lucide-react'
 import Link from 'next/link'
-
-interface PostItemProps {
-  post: Post
-}
 
 export const PostItem: FC<PostItemProps> = ({ post }) => (
   <div className="relative p-4 rounded-lg bg-neutral-900/70 border border-neutral-700 hover:border-neutral-800 transition-colors flex flex-col md:flex-row flex-wrap gap-4">

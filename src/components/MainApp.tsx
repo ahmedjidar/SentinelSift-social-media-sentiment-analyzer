@@ -9,6 +9,7 @@ import { ResultsView } from "@/components/main/ResultsView"
 import { useSentimentAnalysis } from "@/hooks/useSentimentAnalysis"
 import { childVariants, mainVariants, MotionApiKeySettings, MotionAppIdentityCard } from "@/components/main/motion-wrappers"
 import { useApiKeys } from '@/hooks/useApiKeys'
+import { ErrorHandler } from './alerts/ErrorHandler'
 
 export default function MainApp() {
   const {
@@ -36,7 +37,9 @@ export default function MainApp() {
     handleSave,
     handleClearKeys,
     getKeyStatus,
-    validationStatus
+    validationStatus,
+    errors,
+    clearError,
   } = useApiKeys()
 
   return (
@@ -46,6 +49,11 @@ export default function MainApp() {
       variants={mainVariants}
       className="main-container min-h-screen bg-neutral-950 text-neutral-100 p-8 sm:grid sm:grid-cols-8 gap-4"
     >
+      <ErrorHandler 
+        errors={errors}
+        clearError={clearError}
+      />
+
       <MotionApiKeySettings 
         openAIKey={openAIKey}
         setOpenAIKey={setOpenAIKey}

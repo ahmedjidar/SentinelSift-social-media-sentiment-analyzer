@@ -2,15 +2,8 @@
 
 import { FC, useState, useEffect, useRef } from 'react'
 import { Search, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import ReactDOM from 'react-dom'
-
-interface SearchHeaderProps {
-  query: string
-  loading: boolean
-  setQuery: (value: string) => void
-  analyzeSentiment: (query?: string) => void
-}
+import { SearchHeaderProps } from '@/types/types'
 
 export const SearchHeader: FC<SearchHeaderProps> = ({
   query,
@@ -40,20 +33,38 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
           </span>
         </div>
 
-        <Button
+        <button
           onClick={() => analyzeSentiment()}
           disabled={loading}
-          className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 bg-neutral-200 hover:bg-white text-neutral-950 hover:text-neutral-800 rounded-lg font-medium gap-2 shadow-lg hover:shadow-xl transition-all"
+          className="text-sm cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 h-10 px-6 
+                    bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-emerald-600/20 
+                    hover:from-emerald-400/30 hover:via-emerald-500/20 hover:to-emerald-600/30 
+                    border border-emerald-500/30 hover:border-emerald-400/50
+                    text-neutral-100 rounded-lg font-medium gap-2 
+                    shadow-[0_0_15px_rgba(34,197,94,0.1)] hover:shadow-[0_0_25px_rgba(34,197,94,0.2)]
+                    transition-all duration-300 group overflow-hidden"
         >
-          {loading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Analyzing</span>
-            </>
-          ) : (
-            'Evaluate'
-          )}
-        </Button>
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity 
+                          bg-[radial-gradient(circle_at_50%_50%,rgba(34,197,94,0.3)_0%,transparent_60%)] 
+                          animate-sparkle-pulse" 
+          />
+
+          <div className="relative z-10 flex items-center gap-2">
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                <span className="bg-gradient-to-r from-emerald-300 to-emerald-400 bg-clip-text text-transparent">
+                  Analyzing
+                </span>
+              </>
+            ) : (
+              <span className="bg-gradient-to-r from-emerald-300 to-emerald-200 bg-clip-text text-transparent 
+                             group-hover:from-emerald-200 group-hover:to-emerald-100 transition-all">
+                Evaluate
+              </span>
+            )}
+          </div>
+        </button>
       </div>
 
       {isSearchFocused && ReactDOM.createPortal(
@@ -119,3 +130,4 @@ export const SearchHeader: FC<SearchHeaderProps> = ({
     </>
   )
 }
+

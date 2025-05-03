@@ -40,6 +40,14 @@ export interface ValidationStatus {
   hf: ServiceState;
 }
 
+export interface AlertProps {
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  message: string
+  duration?: number
+  onClose: () => void
+}
+
 export interface ValidationStatusProps {
   status: ValidationStatus;
 }
@@ -47,6 +55,52 @@ export interface ValidationStatusProps {
 export interface AppError {
   type: ErrorType
   message: string
+}
+
+export interface SearchHeaderProps {
+  query: string
+  loading: boolean
+  setQuery: (value: string) => void
+  analyzeSentiment: (query?: string) => void
+}
+
+export interface StatsCardProps {
+  title: string
+  value: number
+  trend: 'up' | 'down' | 'meh'
+  percentage: number
+}
+
+export interface PostItemProps {
+  post: Post
+}
+
+export interface FiltersProps {
+  timeFilter: string
+  setTimeFilter: (value: string) => void
+  limit: number
+  setLimit: (value: number) => void
+}
+
+export interface ExportReportButtonProps {
+  elementId: string
+}
+
+export interface ErrorMessageProps {
+  error: AppError | null
+}
+
+export interface SentimentPieChartProps {
+  data: SentimentData
+}
+
+export interface ApiKeyInputProps {
+  type: 'openai' | 'hf'
+  value: string
+  saved: boolean
+  status: 'empty' | 'valid' | 'invalid' | 'loading'
+  onSave: (value: string) => void
+  setKey: (value: string) => void
 }
 
 export type ServiceState = 'empty' | 'valid' | 'invalid' | 'loading';

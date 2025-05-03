@@ -1,10 +1,6 @@
 'use client'
 import { PieChart, Pie, Cell, Tooltip } from 'recharts'
-import { SentimentData } from '@/types/types'
-
-interface SentimentPieChartProps {
-  data: SentimentData
-}
+import { SentimentData, SentimentPieChartProps } from '@/types/types'
 
 const COLORS = ['#10B981', '#EF4444', '#3B82F6']
 

@@ -16,7 +16,6 @@ export async function GET(request: NextRequest) {
         }
     }
     ))
-    console.log('Decrypted values:', decryptedValues)
     return NextResponse.json({
         openai: decryptedValues[0] || null,
         hf: decryptedValues[1] || null

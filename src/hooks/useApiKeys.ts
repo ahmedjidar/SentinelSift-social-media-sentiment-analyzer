@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
@@ -15,6 +16,10 @@ export const useApiKeys = () => {
     openai: 'empty',
     hf: 'empty'
   });
+  const [errors, setErrors] = useState<{ 
+    type: 'validation' | 'save' | 'clear' | 'load';
+    message: string 
+  }[]>([]);
 
   useEffect(() => {
     const fetchKeys = async () => {
@@ -30,9 +35,11 @@ export const useApiKeys = () => {
           openai: openai ? 'valid' : 'empty',
           hf: hf ? 'valid' : 'empty'
         }))
-
       } catch (error) {
-        console.error('Failed to load keys:', error)
+        setErrors(prev => [...prev, {
+          type: 'load',
+          message: 'Failed to load saved keys'
+        }]);
       } finally {
         setIsMounted(true)
       }
@@ -61,7 +68,10 @@ export const useApiKeys = () => {
       return status;
 
     } catch (error) {
-      console.error("Validation error:", error);
+      setErrors(prev => [...prev, {
+        type: 'validation',
+        message: `Failed to validate ${service.toUpperCase()} key`
+      }]);
       setValidationStatus(prev => ({ ...prev, [service]: 'invalid' }));
       return 'invalid';
     }
@@ -87,7 +97,10 @@ export const useApiKeys = () => {
         }
       }
     } catch (error) {
-      console.error('Save failed:', error)
+      setErrors(prev => [...prev, {
+        type: 'save',
+        message: `Failed to save ${type.toUpperCase()} key`
+      }]);
     }
   }, [validateKey, setOpenAISaved, setHfSaved])
 
@@ -97,16 +110,19 @@ export const useApiKeys = () => {
       setOpenAIKey('')
       setHfKey('')
     } catch (error) {
-      console.error('Failed to clear keys:', error)
+      setErrors(prev => [...prev, {
+        type: 'clear',
+        message: 'Failed to clear API keys'
+      }]);
     }
-  }, [])
+  }, []) 
 
   const getKeyStatus = useCallback((service: "openai" | "hf") => {
     return validationStatus[service];
   }, [validationStatus]);
 
   return {
-    openAIKey,
+    openAIKey, 
     setOpenAIKey,
     hfKey,
     setHfKey,
@@ -117,6 +133,10 @@ export const useApiKeys = () => {
     isMounted,
     handleSave,
     handleClearKeys,
-    getKeyStatus
+    getKeyStatus,
+    errors,
+    clearError: useCallback((index: number) => {
+      setErrors(prev => prev.filter((_, i) => i !== index));
+    }, [])
   }
 }

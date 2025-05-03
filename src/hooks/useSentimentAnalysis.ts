@@ -44,7 +44,7 @@ export const useSentimentAnalysis = () => {
 
             const data = await response.json()
             console.log()
-            if (data.switched) alert('Fallback activated due to invalid keys');
+            if (data.switched) alert('Fallback activated due to invalid keys'); 
             setResults(data)
 
         } catch (err) {
