@@ -134,11 +134,9 @@ Contribute to the cognitive network:
 
 ## 📜 **License**
 
-```text
-░░▒▒▓▓██ MIT License ██▓▓▒▒░░
+This project is licensed under Apache 2.0 + Commons Clause.
 
-Permission is hereby granted, free of charge, to any neural entity obtaining a copy...
-```
+See [LICENSE](./LICENSE) and [Commons-Clause.txt](./Commons-Clause.txt).
 
 ---
 
