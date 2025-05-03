@@ -1,0 +1,10 @@
+The “Commons Clause” is an additional restriction to the Apache License, Version 2.0.
+
+Without limiting other terms in the License, the grant of rights under Sections 1 through 8 of the License
+is expressly made subject to the following condition:
+
+The Software may not be sold, sublicensed, or otherwise provided to third parties for a fee
+if the value of the Software to the third party derives, entirely or substantially, from the functionality of the Software.
+
+“Sell” means practicing any or all of the rights granted to you under the License to provide to third parties,
+for a fee or other consideration (including distributing, sublicensing, renting, or leasing).
