@@ -50,7 +50,7 @@ export const AppIdentityCard = () => (
     <p className="text-sm text-neutral-400 pt-4 border-t border-neutral-800/50">
       SentinelSift employs neuro-symbolic AI to analyze community sentiment patterns, 
       protecting digital ecosystems from cognitive dissonance through adaptive 
-      anomaly detection.<br /> <br /> <i> FTC-compliant with truth-in-advertising. Licensed under MIT.</i>
+      anomaly detection.<br /> <br /> <i> FTC-compliant with truth-in-advertising. Licensed under Apache 2.0 + Commons Clause.</i>
     </p>
 
     <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-800/50">
