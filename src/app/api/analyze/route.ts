@@ -7,8 +7,8 @@ import { AnalysisError, RateLimitError } from '@/lib/errors';
 export async function POST(req: NextRequest) {
     try {
         // redis rate limiting 
-        // const success = rateLimitHandler(req);
-        // if(!success) throw new RateLimitError();
+        const success = rateLimitHandler(req);
+        if(!success) throw new RateLimitError();
 
         const cookies = req.cookies;
         const encryptedOpenAI = cookies.get('secure_openai_key')?.value;
