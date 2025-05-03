@@ -27,6 +27,8 @@
   </video>
 </div>
 
+https://github.com/user-attachments/assets/6a6f3dc2-b13f-4661-9cc1-b6e16678631d
+
 ## 🧠 **Neural Core Features**
 
 - ⚡︎ Adaptive Sentiment Radar  
