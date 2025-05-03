@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     description: "AI-powered sentiment radar for digital community ecosystems",
     siteName: "SentinelSift",
     images: [{
-      url: "/og-banner.png",
+      url: "/og-banner-1.png",
       width: 1200,
       height: 630,
       alt: "SentinelSift Neural Analysis Interface",
