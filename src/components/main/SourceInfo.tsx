@@ -10,7 +10,7 @@ export const AppIdentityCard = () => (
       </div>
       <div>
         <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-          SentinelSift
+          SentinelSiftX
         </h1>
         <p className="text-sm text-neutral-400 mt-0.5">
           Cognitive community analysis suite powered by OpenAI & Hugging Face
