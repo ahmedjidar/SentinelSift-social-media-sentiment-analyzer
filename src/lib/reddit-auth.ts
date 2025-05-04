@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AuthError } from './errors';
 
-export const userAgent = 'web:social-media-sentiment-analyzer:v1.0 (by /u/Logical-Beginning103)';
+export const userAgent = 'web:sentinelsift.vercel.app:v1.0.0 (by /u/Logical-Beginning103)';
 
 let tokenCache: { token: string; expires: number } | null = null;
 
@@ -9,7 +9,7 @@ export async function getRedditToken() {
   if (tokenCache && tokenCache.expires > Date.now()) {
     return tokenCache.token;
   }
-
+ 
   try {
     const newToken = await refreshToken();
     tokenCache = {
